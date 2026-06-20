@@ -18,13 +18,13 @@ jobs:
       with:
         python-version: '3.11'
     
-    - name: Setup Java
+    - name: Setup Java 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
     
-    - name: Install Dependencies
+    - name: Install System Dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y \
@@ -34,45 +34,53 @@ jobs:
           cmake libffi-dev libssl-dev \
           build-essential gettext \
           autopoint automake libltdl-dev
-        
+    
+    - name: Install Python Packages
+      run: |
         pip install --upgrade pip
         pip install --upgrade buildozer
         pip install cython==0.29.36
     
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-      with:
-        accept-android-sdk-licenses: true
-        log-accepted-android-sdk-licenses: false
-    
-    - name: Install Android SDK Tools
+    - name: Pre-Accept Android SDK Licenses
       run: |
-        sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+        # Buildozer'in indirecegi yere klasor olustur
+        mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
+        
+        # Tum lisanslari onceden kabul et
+        cat > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license <<'EOF'
+        
+        8933bad161af4178b1185d1a37fbf41ea5269c55
+        d56f5187479451eabf01fb78af6dfcb131a6481e
+        24333f8a63b6825ea9c5514f83c2829b004d1fee
+        EOF
+        
+        cat > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license <<'EOF'
+        
+        84831b9409646a918e30573bab4c9c91346d8abd
+        504667f4c0de7af1a06de9f4b1727b84351f2910
+        EOF
+        
+        cat > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-arm-dbt-license <<'EOF'
+        
+        859f317696f67ef3d7f30a50a5560e7834b43903
+        EOF
+        
+        cat > ~/.buildozer/android/platform/android-sdk/licenses/google-gdk-license <<'EOF'
+        
+        33b6a2b64607f11b759f320ef9dff4ae5c47d97a
+        EOF
+        
+        cat > ~/.buildozer/android/platform/android-sdk/licenses/intel-android-extra-license <<'EOF'
+        
+        d975f751698a77b662f1254ddbeed3901e976f5a
+        EOF
+        
+        cat > ~/.buildozer/android/platform/android-sdk/licenses/mips-android-sysimage-license <<'EOF'
+        
+        e9acab5b5fbb560a72cfaecce8946896ff6aab9d
+        EOF
+        
+        echo "=== Lisanslar olusturuldu ==="
+        ls -la ~/.buildozer/android/platform/android-sdk/licenses/
     
-    - name: Cache Buildozer
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.buildozer
-          .buildozer
-        key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
-    
-    - name: Build APK
-      env:
-        ANDROID_HOME: /usr/local/lib/android/sdk
-        ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-      run: |
-        export PATH=$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools
-        yes | buildozer android debug
-    
-    - name: List APK files
-      run: |
-        echo "=== bin klasoru ==="
-        ls -la bin/ || echo "bin yok"
-        find . -name "*.apk" -type f
-    
-    - name: Upload APK
-      if: success()
-      uses: actions/upload-artifact@v4
-      with:
-        name: 
+    - 
